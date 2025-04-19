@@ -12,19 +12,32 @@
 		"lint": "prettier --check ."
 	},
 	"devDependencies": {
+		"@skeletonlabs/skeleton": "^3.1.2",
+		"@skeletonlabs/skeleton-svelte": "^1.2.1",
 		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
-		"@tailwindcss/container-queries": "^0.1.1",
-		"@tailwindcss/forms": "^0.5.10",
-		"@tailwindcss/typography": "^0.5.16",
-		"autoprefixer": "^10.4.20",
+		"@tailwindcss/forms": "^0.5.9",
+		"@tailwindcss/typography": "^0.5.15",
+		"@tailwindcss/vite": "^4.0.0",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
-		"prettier-plugin-tailwindcss": "^0.6.10",
 		"svelte": "^5.0.0",
-		"tailwindcss": "^3.4.17",
-		"vite": "^6.0.0"
+		"tailwindcss": "^4.0.0",
+		"vite": "^6.2.5"
 	},
-	"packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677"
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	},
+	"packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677",
+	"dependencies": {
+		"@lucide/svelte": "^0.501.0",
+		"lucide-svelte": "^0.501.0",
+		"pdf-lib": "^1.17.1",
+		"pdf-merger-js": "^5.1.2",
+		"pdfjs-dist": "5.0.375",
+		"tesseract.js": "^6.0.1"
+	}
 }
