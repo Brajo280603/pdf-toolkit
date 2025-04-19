@@ -9,7 +9,7 @@
  
 
     
-
+    import { createWorker } from 'tesseract.js';
     import PDFMerger from 'pdf-merger-js/browser';
 
     import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
@@ -28,20 +28,68 @@
     let merged_file_name = "";
 
     
-    async function  merge_pdfs(pdfs_array) {
-        const merger = new PDFMerger();
+    async function recognizeText(images,index,array_length) {
         
-        for(let i = 0;i<pdfs_array.length;i++){
-            await merger.add(pdfs_array[i]);
+        console.log(images);
+        try {
+            const worker = await createWorker('eng', 1, {
+                logger: (m) => {
+                    console.log(m);
+                    if(m.status = ""){}
+                }
+            });
+            const { data } = await worker.recognize(
+                images,
+                { pdfTitle: `part_${index}` },
+                { pdf: true }
+            );
+            console.log(data.text);
+
+            pdf = data.pdf;
+
+            worker.terminate();
+
+            files_remaining_percentage += (1/array_length) * 100;
+            
+            files_remaining_percentage = files_remaining_percentage > 100 ? 100 : Math.floor(files_remaining_percentage);
+            return Promise.resolve({
+                                        "pdf_raw":data.pdf,
+                                        "index":index
+                                    });
+        } catch (err) {
+            console.error(err);
+            return Promise.reject(err);
         }
+    }
+
+    function raw_data_to_files(raw_data,fileName) {
+        const blob = new Blob([new Uint8Array(raw_data)], { type: 'application/pdf' });
+
+        blob.name = fileName;
+        blob.lastModifiedData = new Date();
         
+        return blob;
+    }
+
+    async function  merge_pdfs(pdfs_detailed_array) {
+        const merger = new PDFMerger();
+
+        console.log(pdfs_detailed_array);
+        pdfs_detailed_array.map(el=>{
+            el.pdf_file = raw_data_to_files(el.pdf,`${el.index}.pdf`);
+        })
+
+        
+        for(let i = 0;i<pdfs_detailed_array.length;i++){
+            await merger.add(pdfs_detailed_array[i].pdf_raw);
+        }
 
         await merger.setMetadata({
             title : `${merged_file_name}`
         })
 
         let merged_pdf = await merger.saveAsBlob()
-        console.log(merged_pdf);
+        console.log("error not above");
         
 
         // const link = document.createElement('a');]
@@ -64,6 +112,7 @@
         }
     }
 
+
     function button_style_controller(e){
         
 
@@ -72,6 +121,7 @@
         input_pdf.length == 0? document.querySelector("#file_downloader").classList.add("hidden"):null;
 
         files_remaining_percentage = 0;
+        console.log(e.acceptedFiles)
         // input_pdf = e.acceptedFiles;// only accept new files.
         input_pdf = OnlyAcceptNewValue(e.acceptedFiles,input_pdf)
         console.log(input_pdf)
@@ -116,29 +166,54 @@
 
         arr1.forEach((el,i)=>{
             if ( input_file_index_counter < i){
+                console.log(el)
                 temp_arr.push(el)
                 input_file_index_counter++;
             }
         })
 
         console.log(input_file_index_counter)
+        console.log(temp_arr)
 
         return temp_arr;
     }
 
-    function complete(){
-        merge_pdfs(input_pdf);
+    async function complete() {
+        files_remaining_percentage = null
+        let images = input_pdf
+        console.log(images);
+
+        let ocr_pdfs = [];
+
+        for(let i = 0;i<images.length;i++){
+            await recognizeText(images[i],i,images.length).then((data_json) => {
+                ocr_pdfs.push(data_json);
+
+            });
+        }
+
+        ocr_pdfs.sort((a,b)=>{
+            return a.index - b.index;
+        })
+
+        
+        await merge_pdfs(ocr_pdfs);
+
         document.querySelector("#file_downloader").classList.remove("hidden")
+        
+        files_remaining_percentage = files_remaining_percentage < 100 ? 100 : files_remaining_percentage;
+
+        console.log(ocr_pdfs);
     }
 
 </script>
 
-<main class="flex flex-col justify-center items-center py-5">
+<main class="flex flex-col justify-center items-center  py-5">
     <div class="w-1/2 flex flex-col gap-5">
         <FileUpload
             maxFiles={50}
-            accept="application/pdf"
-            subtext="Attach PDFs"
+            accept="image/jpeg"
+            subtext="Attach Images"
             onFileChange={e=>{button_style_controller(e)}}
             classes="w-full"
         >
@@ -149,7 +224,7 @@
             <div class="btn preset-outlined-surface-500 h-48 w-full">
                 
                 <span>
-                    Upload PDFs
+                    Upload Imagess
                 </span>
                 <IconDropzone/>
             </div>
@@ -198,11 +273,11 @@
     </div>
 
     <div class="w-1/2 mt-12 flex flex-col gap-12">
-        <button id="ocr_btn" type="button" class=" w-full btn preset-filled-primary-500" disabled on:click={()=>{complete()}}>Merge PDFs</button>
+        <button id="ocr_btn" type="button" class=" w-full btn preset-filled-primary-500" disabled on:click={()=>{complete()}}>Convert to PDF</button>
 
-        <!-- <Progress value={files_remaining_percentage} max={100} >{files_remaining_percentage != null?files_remaining_percentage+"%":"loading..."}</Progress> -->
+        <Progress value={files_remaining_percentage} max={100} >{files_remaining_percentage != null?files_remaining_percentage+"%":"loading..."}</Progress>
          <label for="" class="label">
-            <span class="label-text">Merged File Name</span>
+            <span class="label-text">PDF File Name</span>
             <input type="text" bind:value = {merged_file_name} class="input">
          </label>
         <a id="file_downloader" class="btn preset-filled-success-500 hidden" download="{merged_file_name.split('.')[0]}">Download pdf</a>
