@@ -8,6 +8,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"gh-pages": "git subtree push --prefix build origin gh-pages",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
 	},
