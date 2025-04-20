@@ -216,6 +216,7 @@
             subtext="Attach Images"
             onFileChange={e=>{button_style_controller(e)}}
             classes="w-full"
+            capture
         >
             <!-- {#snippet iconInterface()}<IconDropzone class="size-8" />{/snippet}
             {#snippet iconFile()}<IconFile class="size-4" />{/snippet}
