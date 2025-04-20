@@ -4,6 +4,10 @@ import MenuCards from "$lib/MenuCards.svelte";
 
 
 import { FileSearch,FileStack,SquareSplitHorizontal,WholeWord,FileImage,Projector,Sheet,ImageUp,Text,PanelLeftOpen,NotebookTabs } from "lucide-svelte";
+
+import { page_name } from '$lib/store/page_name';
+
+page_name.set("pdf-toolkit")
 </script>
 
 <main class="p-5 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 sm:grid-cols-3  gap-5">

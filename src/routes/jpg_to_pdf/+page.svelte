@@ -14,6 +14,10 @@
 
     import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 
+    import { page_name } from '$lib/store/page_name';
+
+    page_name.set("JPG to PDF");
+
     let workerSrc = "https://unpkg.com/pdfjs-dist@5.0.375/build/pdf.worker.min.mjs";
 
     let file_img;
@@ -284,6 +288,6 @@
         <a id="file_downloader" class="btn preset-filled-success-500 hidden" download="{merged_file_name.split('.')[0]}">Download pdf</a>
     </div>
 
-    <a href="/" class="btn preset-filled-surface-500 rounded-full h-12 w-12 fixed top-5 left-5"><ArrowLeft class="size-8"/></a>
+    
 
 </main>
