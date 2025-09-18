@@ -27,6 +27,7 @@
     let images;
     let files_remaining_percentage = 0; // for progress
     let input_pdf;
+    let many_images = false;
 
     async function convertPdfToImages(file) {
 
@@ -38,7 +39,8 @@
         return new Promise((resolve) => {
             reader.onload = async () => {
                 const arrayBuffer = reader.result;
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                // const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const pdf = await getDocument({ data: arrayBuffer }).promise;
                 let pages = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
@@ -66,12 +68,12 @@
 
     async function create_zip(file_array){
         const imagesZip = zipper.folder("images_folder")
-        console.log(file_array)
+        // console.log(file_array)
         file_array.forEach(file=>{
             imagesZip.file(file.name+".jpg",file)
         })
 
-        console.log(imagesZip);
+        // console.log(imagesZip);
 
         let zip_file = await imagesZip.generateAsync({type:"blob"})
 
@@ -80,24 +82,37 @@
     }
 
     async function complete() {
+        many_images= false;
         file_pdf = [];
         file_pdf[0]=input_pdf
-        console.log(file_pdf);
+        // console.log(file_pdf);
         files_remaining_percentage = null;
         // files_remaining_percentage += 3;
         let images = await convertPdfToImages(file_pdf[0]); //converts pdf to images
-        console.log(images);
+        // console.log(images);
 
         let image_file_array = [];
 
         for(let i = 0;i<images.length;i++){
-            console.log(images[i])
+            // console.log(images[i])
             image_file_array.push(await base64ToFile(images[i],input_pdf.name.split('.')[0]+"_page_"+(i+1))); //converts each images base64 strings to jpgfiles
+
+            if(i > 1){
+                many_images = true;
+            }
         }
 
         console.log(image_file_array)
 
-        let zip_blob =  await create_zip(image_file_array);
+
+        let zip_blob;
+        if(many_images){
+            zip_blob =  await create_zip(image_file_array);
+        }else{
+            // image_file_array[0].name += ".jpg"
+            zip_blob = image_file_array[0];
+        }
+
 
         const link = document.querySelector("#file_downloader")
             if (link.download !== undefined) {
@@ -106,7 +121,11 @@
 
                 // ___ the following is for downloading the file___
                 link.setAttribute('href', url);
-                link.setAttribute('download', input_pdf.name.split('.')[0]);
+                if(many_images){
+                    link.setAttribute('download', input_pdf.name.split('.')[0]);
+                }else{
+                    link.setAttribute('download', input_pdf.name.split('.')[0] + ".jpg");
+                }
                 
             }
 
@@ -147,7 +166,7 @@
 
     <Progress value={files_remaining_percentage} max={100} >{files_remaining_percentage != null?files_remaining_percentage+"%":"loading..."}</Progress>
 
-    <a id="file_downloader" class="btn preset-filled-success-500 hidden" >Download images zip</a>
+    <a id="file_downloader" class="btn preset-filled-success-500 hidden" >Download image{many_images ? "s zip" : ""}</a>
 </div>
 
 

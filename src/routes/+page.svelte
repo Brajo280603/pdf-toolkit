@@ -3,7 +3,7 @@
 import MenuCards from "$lib/MenuCards.svelte";
 
 
-import { FileSearch,FileStack,SquareSplitHorizontal,WholeWord,FileImage,Projector,Sheet,ImageUp,Text,PanelLeftOpen,NotebookTabs } from "lucide-svelte";
+import { FileSearch,FileStack,SquareSplitHorizontal,WholeWord,FileImage,Projector,Sheet,ImageUp,Text,PanelLeftOpen,NotebookTabs,Image } from "lucide-svelte";
 
 import { page_name } from '$lib/store/page_name';
 
@@ -22,5 +22,6 @@ page_name.set("pdf-toolkit")
     <MenuCards link="/ppt_to_pdf" name="PPT to PDF" icon_component={PanelLeftOpen}/>
     <MenuCards link="/pdf_to_excel" name="PDF to Excel" icon_component={Sheet}/>
     <MenuCards link="/excel_to_pdf" name="Excel to PDF" icon_component={NotebookTabs}/> -->
+    <MenuCards link="/image_compress" name="Image Compress" icon_component={Image}/>
     
 </main>

@@ -1,25 +1,20 @@
 <script>
     import { FileUpload,Progress } from '@skeletonlabs/skeleton-svelte';
-    
-    // Icons
     import IconDropzone from '@lucide/svelte/icons/file-plus-2';
     import IconFile from '@lucide/svelte/icons/paperclip';
     import IconRemove from '@lucide/svelte/icons/circle-x';
     import { ArrowLeft,ArrowUp,ArrowDown } from 'lucide-svelte';
- 
+    import JSZIP from 'jszip';
+    import imageCompression from "browser-image-compression";
 
-    
-    import { createWorker } from 'tesseract.js';
-    import PDFMerger from 'pdf-merger-js/browser';
 
-    import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
-
+    //changing page name
     import { page_name } from '$lib/store/page_name';
 
-    page_name.set("JPG to PDF");
-
-    let workerSrc = "https://unpkg.com/pdfjs-dist@5.0.375/build/pdf.worker.min.mjs";
-
+    page_name.set("Image Compress");
+    
+    let zipper = new JSZIP();
+    let imageSize;
     let file_img;
     let pdf;
     let pdf_file_url;
@@ -27,96 +22,131 @@
     let files_remaining_percentage = 0; // for progress
     let input_pdf = [];
     let api;
+    let many_images = false;
+    let optionSelect = "Size"; // Set a default value
 
     let input_file_index_counter = -1;
     let merged_file_name = "";
 
-    
-    async function recognizeText(images,index,array_length) {
-        
-        console.log(images);
+
+
+
+
+    async function imageCompressorFunction(image) {
+        // document.querySelector(".images").innerHTML = ``;
+        imageSize = imageSize ? imageSize : 1024;
+
+        const imageFile = image;
+        console.log("originalFile instanceof Blob", imageFile instanceof Blob); // true
+        console.log(`originalFile size ${imageFile.size / 1024 / 1024} MB`);
+
+        const options = {
+            maxSizeMB: imageSize / 1024,
+            // maxWidthOrHeight: 1920,
+            useWebWorker: true,
+        };
+
         try {
-            const worker = await createWorker('eng', 1, {
-                logger: (m) => {
-                    console.log(m);
-                    if(m.status = ""){}
-                }
-            });
-            const { data } = await worker.recognize(
-                images,
-                { pdfTitle: `part_${index}` },
-                { pdf: true }
-            );
-            console.log(data.text);
+            const compressedFile = await imageCompression(imageFile, options);
+            console.log(
+                "compressedFile instanceof Blob",
+                compressedFile instanceof Blob
+            ); // true
+            console.log(
+                `compressedFile size ${compressedFile.size / 1024 / 1024} MB`
+            ); // smaller than maxSizeMB
 
-            pdf = data.pdf;
+            return await compressedFile;
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
-            worker.terminate();
+    async function complete() {
+        many_images= false;
+        // file_pdf = [];
+        // file_pdf[0]=input_pdf
 
-            files_remaining_percentage += (1/array_length) * 100;
+        let images = input_pdf;
+
+        // console.log(file_pdf);
+        files_remaining_percentage = null;
+        // files_remaining_percentage += 3;
+        // let images = await convertPdfToImages(file_pdf[0]); //converts pdf to images
+        // console.log(images);
+
+        
+
+
+
+        let image_file_array = [];
+
+        for(let i = 0;i<images.length;i++){
+            // console.log(images[i])
+            // image_file_array.push(await base64ToFile(images[i],input_pdf.name.split('.')[0]+"_page_"+(i+1))); //converts each images base64 strings to jpgfiles
             
-            files_remaining_percentage = files_remaining_percentage > 100 ? 100 : Math.floor(files_remaining_percentage);
-            return Promise.resolve({
-                                        "pdf_raw":data.pdf,
-                                        "index":index
-                                    });
-        } catch (err) {
-            console.error(err);
-            return Promise.reject(err);
-        }
-    }
+            image_file_array.push(await imageCompressorFunction(images[i]))
 
-    function raw_data_to_files(raw_data,fileName) {
-        const blob = new Blob([new Uint8Array(raw_data)], { type: 'application/pdf' });
+            if(i > 1){
+                many_images = true;
+            }
 
-        blob.name = fileName;
-        blob.lastModifiedData = new Date();
-        
-        return blob;
-    }
-
-    async function  merge_pdfs(pdfs_detailed_array) {
-        const merger = new PDFMerger();
-
-        console.log(pdfs_detailed_array);
-        pdfs_detailed_array.map(el=>{
-            el.pdf_file = raw_data_to_files(el.pdf,`${el.index}.pdf`);
-        })
-
-        
-        for(let i = 0;i<pdfs_detailed_array.length;i++){
-            await merger.add(pdfs_detailed_array[i].pdf_raw);
+            console.log((i/images.length) * 100)
+            files_remaining_percentage = (i/images.length) * 100;
         }
 
-        await merger.setMetadata({
-            title : `${merged_file_name}`
-        })
+        console.log(image_file_array)
 
-        let merged_pdf = await merger.saveAsBlob()
-        console.log("error not above");
-        
 
-        // const link = document.createElement('a');]
+        let zip_blob;
+        if(many_images){
+            zip_blob =  await create_zip(image_file_array);
+        }else{
+            // image_file_array[0].name += ".jpg"
+            zip_blob = image_file_array[0];
+        }
+
+
         const link = document.querySelector("#file_downloader")
-        if (link.download !== undefined) {
+            if (link.download !== undefined) {
 
-            const url = URL.createObjectURL(merged_pdf);
+                const url = URL.createObjectURL(zip_blob);
 
-            // ___ the following is for downloading the file___
-            link.setAttribute('href', url);
-            link.setAttribute('download', merged_file_name.split('.')[0]);
-            // link.style.visibility = 'hidden';
-            // document.body.appendChild(link);
-            // link.click();
-            // document.body.removeChild(link);
-            // link.classList.remove("hidden")
+                // ___ the following is for downloading the file___
+                link.setAttribute('href', url);
+                if(many_images){
+                    link.setAttribute('download', input_pdf[0].name.split('.')[0]);
+                }else{
+                    console.log(input_pdf)
+                    
+                    // input_pdf = input_pdf[0];
+                    link.setAttribute('download', input_pdf[0].name.split('.')[0] + ".jpg");
+                }
+                
+            }
 
+        files_remaining_percentage = 100;
 
-            pdf_file_url = url;// this shows the pdf file on iframe or can be used in pdfjs
-        }
+        document.querySelector("#file_downloader").classList.remove("hidden");
+    }
+
+    async function create_zip(file_array){
+        const imagesZip = zipper.folder("images_folder")
+        // console.log(file_array)
+        file_array.forEach(file=>{
+            imagesZip.file(file.name+".jpg",file)
+        })
+
+        // console.log(imagesZip);
+
+        let zip_file = await imagesZip.generateAsync({type:"blob"})
+
+        zipper.remove("images_folder");
+        return zip_file
     }
 
 
+    // file_drop functions
     function button_style_controller(e){
         
 
@@ -182,33 +212,7 @@
         return temp_arr;
     }
 
-    async function complete() {
-        files_remaining_percentage = null
-        let images = input_pdf
-        console.log(images);
 
-        let ocr_pdfs = [];
-
-        for(let i = 0;i<images.length;i++){
-            await recognizeText(images[i],i,images.length).then((data_json) => {
-                ocr_pdfs.push(data_json);
-
-            });
-        }
-
-        ocr_pdfs.sort((a,b)=>{
-            return a.index - b.index;
-        })
-
-        
-        await merge_pdfs(ocr_pdfs);
-
-        document.querySelector("#file_downloader").classList.remove("hidden")
-        
-        files_remaining_percentage = files_remaining_percentage < 100 ? 100 : files_remaining_percentage;
-
-        console.log(ocr_pdfs);
-    }
 
 </script>
 
@@ -278,14 +282,20 @@
     </div>
 
     <div class="w-1/2 mt-12 flex flex-col gap-12">
-        <button id="ocr_btn" type="button" class=" w-full btn preset-filled-primary-500" disabled on:click={()=>{complete()}}>Convert to PDF</button>
+        <label for="" class="label">
+            <span class="label-text">File Size In KB</span>
+            <input type="number" bind:value = {merged_file_name} class="input">
+         </label>
+
+
+        <button id="ocr_btn" type="button" class=" w-full btn preset-filled-primary-500" disabled on:click={()=>{complete()}}>Start Compressing</button>
 
         <Progress value={files_remaining_percentage} max={100} >{files_remaining_percentage != null?files_remaining_percentage+"%":"loading..."}</Progress>
-         <label for="" class="label">
+         <!-- <label for="" class="label">
             <span class="label-text">PDF File Name</span>
             <input type="text" bind:value = {merged_file_name} class="input">
-         </label>
-        <a id="file_downloader" class="btn preset-filled-success-500 hidden" download="{merged_file_name.split('.')[0]}">Download pdf</a>
+         </label> -->
+        <a id="file_downloader" class="btn preset-filled-success-500 hidden" >Download image{many_images ? "s zip" : ""}</a>
     </div>
 
     
