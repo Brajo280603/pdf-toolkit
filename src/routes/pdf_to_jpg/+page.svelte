@@ -97,7 +97,7 @@
             // console.log(images[i])
             image_file_array.push(await base64ToFile(images[i],input_pdf.name.split('.')[0]+"_page_"+(i+1))); //converts each images base64 strings to jpgfiles
 
-            if(i > 1){
+            if(i > 0){
                 many_images = true;
             }
         }
