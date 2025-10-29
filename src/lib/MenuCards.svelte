@@ -6,8 +6,8 @@
 </script>
 
 
-<a href={link} class="card w-full max-w-md p-4 text-center cursor-pointer h-36 flex items-center justify-center
-     flex-col transition duration-400
+<a href={link} class="w-full max-w-md p-4 text-center cursor-pointer h-36 flex items-center justify-center
+     flex-col transition duration-400 rounded-sm
         dark:bg-neutral-800 dark:inset-shadow-neutral-500 dark:shadow-neutral-950
         inset-shadow-xs shadow-sm bg-neutral-100 inset-shadow-white
         hover:shadow-lg hover:inset-shadow-sm ">
