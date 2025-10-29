@@ -6,9 +6,13 @@
 </script>
 
 
-<div on:click={goto(link)} class="card w-full max-w-md preset-outlined-surface-500 p-4 text-center cursor-pointer h-36 flex items-center justify-center">
+<a href={link} class="card w-full max-w-md p-4 text-center cursor-pointer h-36 flex items-center justify-center
+     flex-col transition duration-400
+        dark:bg-neutral-800 dark:inset-shadow-neutral-500 dark:shadow-neutral-950
+        inset-shadow-xs shadow-sm bg-neutral-100 inset-shadow-white
+        hover:shadow-lg hover:inset-shadow-sm ">
     <div class="flex flex-col items-center gap-2">
         <svelte:component this={icon_component}/>
         <p>{name}</p>
     </div>
-</div>
+</a>
